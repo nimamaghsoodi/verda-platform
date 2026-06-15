@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: harbor.<CLUSTER_IP>.nip.io/demo/demo-app-backend:latest
+          image: harbor.86.38.238.224.nip.io/demo/demo-app-backend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
@@ -76,7 +76,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: harbor.<CLUSTER_IP>.nip.io/demo/demo-app-frontend:latest
+          image: harbor.86.38.238.224.nip.io/demo/demo-app-frontend:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 80

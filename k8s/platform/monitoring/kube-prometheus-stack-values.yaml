@@ -10,25 +10,17 @@ grafana:
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-prod
     hosts:
-      - grafana.<CLUSTER_IP>.nip.io
+      - grafana.86.38.238.224.nip.io
     tls:
       - secretName: grafana-tls
         hosts:
-          - grafana.<CLUSTER_IP>.nip.io
-  # GitHub OAuth for Grafana
+          - grafana.86.38.238.224.nip.io
+  assertNoLeakedSecrets: false
   grafana.ini:
     server:
-      root_url: https://grafana.<CLUSTER_IP>.nip.io
-    auth.github:
-      enabled: true
-      allow_sign_up: true
-      client_id: "<GITHUB_CLIENT_ID>"
-      client_secret: "<GITHUB_CLIENT_SECRET>"
-      scopes: "user:email,read:org"
-      auth_url: "https://github.com/login/oauth/authorize"
-      token_url: "https://github.com/login/oauth/access_token"
-      api_url: "https://api.github.com/user"
-      allowed_organizations: "<YOUR_GITHUB_ORG>"
+      root_url: https://grafana.86.38.238.224.nip.io
+    auth:
+      disable_login_form: false
   # Additional datasources for Tempo and Loki (alongside auto-added Prometheus)
   additionalDataSources:
     - name: Tempo

@@ -9,7 +9,7 @@ expose:
       secretName: harbor-tls
   ingress:
     hosts:
-      core: harbor.<CLUSTER_IP>.nip.io
+      core: harbor.86.38.238.224.nip.io
     className: nginx
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-prod
@@ -17,7 +17,7 @@ expose:
       nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
       nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
 
-externalURL: https://harbor.<CLUSTER_IP>.nip.io
+externalURL: https://harbor.86.38.238.224.nip.io
 
 persistence:
   enabled: true

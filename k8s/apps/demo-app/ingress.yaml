@@ -10,10 +10,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - demo.<CLUSTER_IP>.nip.io
+        - demo.86.38.238.224.nip.io
       secretName: demo-app-tls
   rules:
-    - host: demo.<CLUSTER_IP>.nip.io
+    - host: demo.86.38.238.224.nip.io
       http:
         paths:
           - path: /api(/|$)(.*)

@@ -1,6 +1,6 @@
 # Rancher Manager
 # Replace CLUSTER_IP with control-plane public IP (Rancher runs on CP)
-hostname: rancher.<CLUSTER_IP>.nip.io
+hostname: rancher.86.38.238.224.nip.io
 
 ingress:
   tls:
@@ -18,4 +18,4 @@ replicas: 1
 # Cluster Management → Users & Authentication → Auth Provider → GitHub
 # clientId and clientSecret from a GitHub OAuth App registered at
 # https://github.com/settings/developers
-# Callback URL: https://rancher.<CLUSTER_IP>.nip.io/verify-auth
+# Callback URL: https://rancher.86.38.238.224.nip.io/verify-auth
