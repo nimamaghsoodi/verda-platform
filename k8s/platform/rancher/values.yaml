@@ -3,6 +3,7 @@
 hostname: rancher.86.38.238.224.nip.io
 
 ingress:
+  ingressClassName: nginx
   tls:
     source: letsEncrypt
 

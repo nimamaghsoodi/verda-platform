@@ -15,14 +15,10 @@ from typing import Literal
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from opentelemetry import metrics, trace
-from opentelemetry._logs import set_logger_provider
 from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
-from opentelemetry.sdk._logs import LoggerProvider
-from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
-from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import Resource
@@ -58,13 +54,6 @@ metric_reader = PeriodicExportingMetricReader(
 meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
 metrics.set_meter_provider(meter_provider)
 meter = metrics.get_meter(SERVICE_NAME)
-
-# Logs (OTLP)
-logger_provider = LoggerProvider(resource=resource)
-logger_provider.add_log_record_processor(
-    BatchLogRecordProcessor(OTLPLogExporter(endpoint=OTEL_ENDPOINT, insecure=True))
-)
-set_logger_provider(logger_provider)
 
 # Inject trace_id into Python log records so Promtail → Loki can correlate
 LoggingInstrumentor().instrument(set_logging_format=True)
