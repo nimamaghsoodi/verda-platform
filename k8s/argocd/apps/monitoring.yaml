@@ -27,3 +27,14 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+    ignoreDifferences:
+      - group: apps
+        kind: DaemonSet
+        jsonPointers: ["/status"]
+      - group: apps
+        kind: Deployment
+        jsonPointers: ["/status"]
+      - group: apps
+        kind: StatefulSet
+        jsonPointers: ["/status"]
