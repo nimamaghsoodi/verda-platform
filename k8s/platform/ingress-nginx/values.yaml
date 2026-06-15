@@ -2,8 +2,9 @@ controller:
   replicaCount: 2
   service:
     type: LoadBalancer
-    # On bare-metal, use the worker node's public IP as external IP
-    externalIPs: []   # populated post-provisioning: [WORKER1_IP, WORKER2_IP]
+    externalIPs:
+      - 86.38.238.224
+      - 86.38.238.226
   config:
     use-real-ip: "true"
     proxy-real-ip-cidr: "0.0.0.0/0"
