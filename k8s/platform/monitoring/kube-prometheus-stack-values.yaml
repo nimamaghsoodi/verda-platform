@@ -25,6 +25,7 @@ grafana:
   additionalDataSources:
     - name: Tempo
       type: tempo
+      uid: tempo
       url: http://tempo.observability.svc.cluster.local:3100
       access: proxy
       jsonData:
@@ -40,6 +41,7 @@ grafana:
           enabled: true
     - name: Loki
       type: loki
+      uid: loki
       url: http://loki.observability.svc.cluster.local:3100
       access: proxy
       jsonData:
@@ -48,6 +50,7 @@ grafana:
             matcherRegex: '"trace_id":"(\w+)"'
             name: TraceID
             url: '$${__value.raw}'
+            urlDisplayLabel: "View in Tempo"
   dashboardProviders:
     dashboardproviders.yaml:
       apiVersion: 1
