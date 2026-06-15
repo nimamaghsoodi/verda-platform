@@ -5,6 +5,10 @@ metadata:
   namespace: observability
 data:
   config.yaml: |
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+
     receivers:
       otlp:
         protocols:
@@ -57,6 +61,7 @@ data:
           receivers: [otlp]
           processors: [memory_limiter, batch, resource]
           exporters: [loki]
+      extensions: [health_check]
 ---
 apiVersion: apps/v1
 kind: Deployment
