@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 
 const API_BASE = '/api';
 
-const GRAFANA_BASE = window.GRAFANA_URL || 'http://grafana.localhost';
+const GRAFANA_BASE = window.GRAFANA_URL || 'https://grafana.86.38.238.224.nip.io';
 
 const styles = {
   container: { maxWidth: 900, margin: '0 auto', padding: '2rem 1rem' },
@@ -61,10 +61,15 @@ function ScenarioCard({ title, description, color, onFire, loading, children }) 
 }
 
 function HistoryEntry({ entry }) {
-  const traceUrl = `${GRAFANA_BASE}/explore?left=${encodeURIComponent(JSON.stringify({
-    datasource: 'Tempo',
-    queries: [{ query: entry.trace_id, queryType: 'traceId' }],
-  }))}`;
+  // Grafana 10+ Explore deep-link format using panes
+  const panes = {
+    p1: {
+      datasource: 'tempo',
+      queries: [{ refId: 'A', queryType: 'traceId', query: entry.trace_id }],
+      range: { from: 'now-1h', to: 'now' },
+    },
+  };
+  const traceUrl = `${GRAFANA_BASE}/explore?panes=${encodeURIComponent(JSON.stringify(panes))}&schemaVersion=1&orgId=1`;
 
   return (
     <div style={styles.entry(entry.status)}>
