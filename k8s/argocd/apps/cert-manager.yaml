@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: cert-manager
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: platform
   source:
@@ -12,9 +14,6 @@ spec:
     helm:
       valuesObject:
         installCRDs: true
-        global:
-          leaderElection:
-            namespace: cert-manager
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager

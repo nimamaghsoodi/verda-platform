@@ -1,10 +1,132 @@
-# Deploys the OpenTelemetry stack: Tempo (traces), Loki (logs), OTEL Collector
-# Grafana datasources are added via ConfigMaps and picked up by kube-prometheus-stack Grafana
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: observability
+  name: tempo
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  project: platform
+  sources:
+    - repoURL: https://grafana.github.io/helm-charts
+      chart: tempo
+      targetRevision: 1.10.1
+      helm:
+        valuesObject:
+          tempo:
+            retention: 48h
+            receivers:
+              otlp:
+                protocols:
+                  grpc:
+                    endpoint: 0.0.0.0:4317
+                  http:
+                    endpoint: 0.0.0.0:4318
+          serviceMonitor:
+            enabled: false   # enabled after monitoring wave completes
+          persistence:
+            enabled: true
+            size: 10Gi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  project: platform
+  sources:
+    - repoURL: https://grafana.github.io/helm-charts
+      chart: loki
+      targetRevision: 6.7.3
+      helm:
+        valuesObject:
+          loki:
+            auth_enabled: false
+            commonConfig:
+              replication_factor: 1
+            storage:
+              type: filesystem
+            schemaConfig:
+              configs:
+                - from: "2024-01-01"
+                  store: tsdb
+                  object_store: filesystem
+                  schema: v13
+                  index:
+                    prefix: index_
+                    period: 24h
+          deploymentMode: SingleBinary
+          singleBinary:
+            replicas: 1
+            persistence:
+              enabled: true
+              size: 10Gi
+          gateway:
+            enabled: false
+          monitoring:
+            serviceMonitor:
+              enabled: false
+          test:
+            enabled: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: promtail
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  project: platform
+  sources:
+    - repoURL: https://grafana.github.io/helm-charts
+      chart: promtail
+      targetRevision: 6.16.4
+      helm:
+        valuesObject:
+          config:
+            clients:
+              - url: http://loki.observability.svc.cluster.local:3100/loki/api/v1/push
+          serviceMonitor:
+            enabled: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: otel-collector
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
 spec:
   project: platform
   source:
@@ -20,3 +142,4 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - SkipDryRunOnMissingResource=true

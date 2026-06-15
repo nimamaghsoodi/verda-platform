@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: demo-app
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
 spec:
   project: apps
   source:
@@ -18,3 +20,10 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - SkipDryRunOnMissingResource=true
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/template/spec/containers/0/image
+        - /spec/template/spec/containers/1/image
