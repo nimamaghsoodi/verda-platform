@@ -55,13 +55,24 @@ meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader]
 metrics.set_meter_provider(meter_provider)
 meter = metrics.get_meter(SERVICE_NAME)
 
-# Inject trace_id into Python log records so Promtail → Loki can correlate
-LoggingInstrumentor().instrument(set_logging_format=True)
-
-logging.basicConfig(
-    level=getattr(logging, os.getenv("LOG_LEVEL", "INFO")),
-    format='{"time":"%(asctime)s","level":"%(levelname)s","trace_id":"%(otelTraceID)s","span_id":"%(otelSpanID)s","message":"%(message)s"}',
+# Configure logging BEFORE LoggingInstrumentor so our formatter is not overridden.
+# basicConfig only takes effect if the root logger has no handlers yet.
+_json_formatter = logging.Formatter(
+    '{"time":"%(asctime)s","level":"%(levelname)s",'
+    '"trace_id":"%(otelTraceID)s","span_id":"%(otelSpanID)s","message":"%(message)s"}'
 )
+_handler = logging.StreamHandler()
+_handler.setFormatter(_json_formatter)
+logging.root.setLevel(getattr(logging, os.getenv("LOG_LEVEL", "INFO")))
+logging.root.addHandler(_handler)
+
+# LoggingInstrumentor injects otelTraceID / otelSpanID attributes onto every
+# LogRecord while inside an active span — no format change needed.
+LoggingInstrumentor().instrument(set_logging_format=False)
+
+# Silence uvicorn's own access logger so only our structured lines reach Loki
+logging.getLogger("uvicorn.access").propagate = False
+
 logger = logging.getLogger(__name__)
 
 # ─── Custom Metrics ──────────────────────────────────────────────────────────
