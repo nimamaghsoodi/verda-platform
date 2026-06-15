@@ -1,0 +1,49 @@
+---
+# Bootstraps Argo CD via Helm, then applies the app-of-apps root Application.
+# After this playbook every platform component is managed by Argo CD.
+- name: Bootstrap Argo CD
+  hosts: control_plane
+  become: true
+  vars:
+    argocd_namespace: argocd
+    argocd_chart_version: "7.3.11"
+  environment:
+    KUBECONFIG: /root/.kube/config
+
+  tasks:
+    - name: Create argocd namespace
+      shell: kubectl get namespace {{ argocd_namespace }} || kubectl create namespace {{ argocd_namespace }}
+      changed_when: false
+
+    - name: Copy Argo CD Helm values to remote
+      copy:
+        src: "{{ playbook_dir }}/../../k8s/argocd/install/argocd-values.yaml"
+        dest: /tmp/argocd-values.yaml
+
+    - name: Install Argo CD via Helm
+      shell: |
+        helm upgrade --install argocd argo/argo-cd \
+          --namespace {{ argocd_namespace }} \
+          --version {{ argocd_chart_version }} \
+          --values /tmp/argocd-values.yaml \
+          --wait --timeout 10m
+      register: argocd_install
+      changed_when: "'deployed' in argocd_install.stdout or 'upgraded' in argocd_install.stdout"
+
+    - name: Wait for Argo CD server deployment
+      shell: kubectl -n {{ argocd_namespace }} rollout status deployment/argocd-server --timeout=5m
+      changed_when: false
+
+    - name: Print initial Argo CD admin password
+      shell: |
+        kubectl -n {{ argocd_namespace }} get secret argocd-initial-admin-secret \
+          -o jsonpath='{.data.password}' | base64 -d
+      register: argocd_pass
+      changed_when: false
+
+    - name: Show Argo CD credentials
+      debug:
+        msg:
+          - "Argo CD URL: https://argocd.86.38.238.224.nip.io"
+          - "Username: admin"
+          - "Password: {{ argocd_pass.stdout }}"

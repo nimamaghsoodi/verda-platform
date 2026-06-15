@@ -1,0 +1,18 @@
+# Copy to terraform.tfvars and fill in your Verda Cloud credentials
+# Get client_id and client_secret from: https://console.verda.com → Keys → Cloud API Credentials
+
+client_id     = "YOUR_CLIENT_ID"
+client_secret = "YOUR_CLIENT_SECRET"
+
+location    = "FIN-01"          # Run: curl https://api.verda.com/v1/locations | jq
+image       = "ubuntu-22.04"    # Run: curl https://api.verda.com/v1/images | jq '.[].image'
+cluster_name = "verda-k8s"
+worker_count = 2
+
+# CPU-only instance types — check availability:
+# curl https://api.verda.com/v1/instance-availability | jq '.[] | select(.gpu == null)'
+instance_type_control_plane = "CPU.4V.16G"
+instance_type_worker        = "CPU.4V.16G"
+
+ssh_public_key_path = "~/.ssh/id_rsa.pub"
+os_volume_size_gb   = 100

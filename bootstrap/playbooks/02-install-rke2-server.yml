@@ -1,0 +1,89 @@
+---
+- name: Install RKE2 server on control-plane
+  hosts: control_plane
+  become: true
+  vars:
+    rke2_version: "stable"
+    rke2_config_dir: /etc/rancher/rke2
+    # Replace with your first worker's public IP (used as ingress IP for nip.io)
+    cluster_domain: "{{ hostvars[groups['workers'][0]]['ansible_host'] }}.nip.io"
+
+  tasks:
+    - name: Create RKE2 config directory
+      file:
+        path: "{{ rke2_config_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Write RKE2 server config
+      copy:
+        dest: "{{ rke2_config_dir }}/config.yaml"
+        content: |
+          write-kubeconfig-mode: "0644"
+          tls-san:
+            - "{{ ansible_host }}"
+            - "{{ inventory_hostname }}"
+          # Disable default nginx (we deploy ingress-nginx via Helm/ArgoCD)
+          disable:
+            - rke2-ingress-nginx
+          # Cilium replaces Canal as CNI (deployed post-bootstrap via Argo CD)
+          cni: canal
+
+    - name: Download and install RKE2 server
+      shell: |
+        curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL={{ rke2_version }} sh -
+      args:
+        creates: /usr/local/bin/rke2
+
+    - name: Enable and start rke2-server
+      systemd:
+        name: rke2-server
+        enabled: true
+        state: started
+
+    - name: Wait for RKE2 to be ready
+      wait_for:
+        path: /var/lib/rancher/rke2/server/node-token
+        timeout: 300
+
+    - name: Fetch node token
+      slurp:
+        src: /var/lib/rancher/rke2/server/node-token
+      register: node_token_raw
+
+    - name: Set node token fact (shared with agent playbook)
+      set_fact:
+        rke2_node_token: "{{ node_token_raw.content | b64decode | trim }}"
+
+    - name: Create root .kube directory
+      file:
+        path: /root/.kube
+        state: directory
+        mode: "0700"
+
+    - name: Copy kubeconfig to root home
+      copy:
+        src: /etc/rancher/rke2/rke2.yaml
+        dest: /root/.kube/config
+        remote_src: true
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Replace localhost with public IP in kubeconfig
+      replace:
+        path: /root/.kube/config
+        regexp: '127\.0\.0\.1'
+        replace: "{{ ansible_host }}"
+
+    - name: Fetch kubeconfig locally
+      fetch:
+        src: /root/.kube/config
+        dest: "{{ playbook_dir }}/../../kubeconfig.yaml"
+        flat: true
+
+    - name: Add kubectl symlink
+      file:
+        src: /var/lib/rancher/rke2/bin/kubectl
+        dest: /usr/local/bin/kubectl
+        state: link

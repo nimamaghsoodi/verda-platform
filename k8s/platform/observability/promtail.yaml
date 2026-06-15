@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: promtail
+  namespace: argocd
+spec:
+  project: platform
+  sources:
+    - repoURL: https://grafana.github.io/helm-charts
+      chart: promtail
+      targetRevision: 6.16.4
+      helm:
+        valuesObject:
+          config:
+            clients:
+              - url: http://loki.observability.svc.cluster.local:3100/loki/api/v1/push
+            snippets:
+              pipelineStages:
+                - cri: {}
+                - json:
+                    expressions:
+                      trace_id: trace_id
+                      span_id: span_id
+                      level: level
+                - labels:
+                    trace_id:
+                    span_id:
+                    level:
+          serviceMonitor:
+            enabled: true
+            namespace: monitoring
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,21 @@
+# Rancher Manager
+# Replace CLUSTER_IP with control-plane public IP (Rancher runs on CP)
+hostname: rancher.<CLUSTER_IP>.nip.io
+
+ingress:
+  tls:
+    source: letsEncrypt
+
+letsEncrypt:
+  email: nmaghsoodi67@gmail.com
+  ingress:
+    class: nginx
+
+# Rancher replica count — 1 for single control-plane demo
+replicas: 1
+
+# GitHub as SAML/OIDC — configured post-install in Rancher UI:
+# Cluster Management → Users & Authentication → Auth Provider → GitHub
+# clientId and clientSecret from a GitHub OAuth App registered at
+# https://github.com/settings/developers
+# Callback URL: https://rancher.<CLUSTER_IP>.nip.io/verify-auth

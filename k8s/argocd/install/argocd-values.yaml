@@ -1,0 +1,38 @@
+## Argo CD Helm values — initial bootstrap (no SSO, plain HTTP for first install)
+## SSO via GitHub/Dex can be added post-bootstrap once cert-manager + ingress are up.
+
+global:
+  domain: argocd.86.38.238.224.nip.io
+
+configs:
+  cm:
+    url: https://argocd.86.38.238.224.nip.io
+  params:
+    server.insecure: "true"   # ingress handles TLS termination
+  rbac:
+    policy.default: role:readonly
+
+server:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts:
+      - argocd.86.38.238.224.nip.io
+    tls:
+      - secretName: argocd-server-tls
+        hosts:
+          - argocd.86.38.238.224.nip.io
+
+dex:
+  enabled: false   # enabled later when GitHub OAuth is configured
+
+redis:
+  enabled: true
+
+applicationSet:
+  enabled: true
+
+notifications:
+  enabled: false

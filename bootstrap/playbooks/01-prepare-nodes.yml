@@ -1,0 +1,57 @@
+---
+- name: Prepare all nodes for RKE2
+  hosts: k8s_cluster
+  become: true
+  tasks:
+    - name: Set hostname from inventory
+      hostname:
+        name: "{{ inventory_hostname }}"
+
+    - name: Disable swap
+      command: swapoff -a
+      changed_when: false
+
+    - name: Remove swap from fstab
+      replace:
+        path: /etc/fstab
+        regexp: '^([^#].*\s+swap\s+.*)$'
+        replace: '# \1'
+
+    - name: Load required kernel modules
+      modprobe:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - overlay
+        - br_netfilter
+
+    - name: Persist kernel modules
+      copy:
+        dest: /etc/modules-load.d/rke2.conf
+        content: |
+          overlay
+          br_netfilter
+
+    - name: Set sysctl params for Kubernetes networking
+      sysctl:
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        sysctl_set: true
+        state: present
+        reload: true
+      loop:
+        - { key: net.bridge.bridge-nf-call-iptables,  value: "1" }
+        - { key: net.bridge.bridge-nf-call-ip6tables, value: "1" }
+        - { key: net.ipv4.ip_forward,                 value: "1" }
+
+    - name: Install prerequisites
+      apt:
+        name:
+          - curl
+          - ca-certificates
+          - gnupg
+          - lsb-release
+          - open-iscsi   # required for Longhorn if added later
+          - nfs-common
+        state: present
+        update_cache: true

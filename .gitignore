@@ -1,0 +1,27 @@
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/.terraform.lock.hcl
+infra/terraform.tfvars
+
+# Ansible generated files
+bootstrap/inventory.ini
+bootstrap/kubeconfig*.yaml
+kubeconfig*.yaml
+
+# Secrets
+**/*-secret.yaml
+**/*-credentials.yaml
+
+# Node
+apps/demo-app/frontend/node_modules/
+apps/demo-app/frontend/build/
+
+# Python
+apps/demo-app/backend/__pycache__/
+apps/demo-app/backend/*.pyc
+apps/demo-app/backend/.venv/
+
+# OS
+.DS_Store

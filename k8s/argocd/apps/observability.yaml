@@ -1,0 +1,22 @@
+# Deploys the OpenTelemetry stack: Tempo (traces), Loki (logs), OTEL Collector
+# Grafana datasources are added via ConfigMaps and picked up by kube-prometheus-stack Grafana
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: observability
+  namespace: argocd
+spec:
+  project: platform
+  source:
+    repoURL: https://github.com/nimamaghsoodi/verda-platform.git
+    targetRevision: HEAD
+    path: k8s/platform/observability
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

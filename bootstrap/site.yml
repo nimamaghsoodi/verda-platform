@@ -1,0 +1,9 @@
+---
+# Full cluster bootstrap — run end-to-end after Terraform provisioning
+# Usage: ansible-playbook site.yml -i inventory.ini
+
+- import_playbook: playbooks/01-prepare-nodes.yml
+- import_playbook: playbooks/02-install-rke2-server.yml
+- import_playbook: playbooks/03-install-rke2-agents.yml
+- import_playbook: playbooks/04-install-helm.yml
+- import_playbook: playbooks/05-bootstrap-argocd.yml
