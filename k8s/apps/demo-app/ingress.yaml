@@ -1,7 +1,9 @@
+---
+# API ingress — strips nothing, keeps /api/ prefix intact for the backend
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: demo-app
+  name: demo-app-api
   namespace: demo-app
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
@@ -23,8 +25,27 @@ spec:
                 name: demo-app-backend
                 port:
                   number: 8000
-          - path: /()(.*)
-            pathType: ImplementationSpecific
+---
+# Frontend ingress — no rewrite, serves the React SPA for all other paths
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: demo-app-frontend
+  namespace: demo-app
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - demo.86.38.238.224.nip.io
+      secretName: demo-app-tls
+  rules:
+    - host: demo.86.38.238.224.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
             backend:
               service:
                 name: demo-app-frontend
