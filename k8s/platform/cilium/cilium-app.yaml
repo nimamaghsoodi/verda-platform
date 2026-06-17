@@ -19,11 +19,18 @@ spec:
             enabled: true
             serviceMonitor:
               enabled: true
-        ipam:
-          mode: kubernetes
-        kubeProxyReplacement: true
-        k8sServiceHost: 86.38.238.228
-        k8sServicePort: 6443
+        # Disabled: kube-proxy replacement causes external traffic issues on bare VMs
+        # Standard mode: Cilium handles NetworkPolicy via eBPF; iptables handles NodePort
+        kubeProxyReplacement: false
+        # Only run on real nodes, not KWOK virtual nodes
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: type
+                      operator: NotIn
+                      values: [kwok]
         # Hubble — L7 network observability
         hubble:
           relay:
