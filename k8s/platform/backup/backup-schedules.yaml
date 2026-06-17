@@ -1,0 +1,69 @@
+# ─── Rancher Backup ─────────────────────────────────────────────────────────
+# Backs up all Rancher management state (clusters, users, projects, RBAC)
+apiVersion: resources.cattle.io/v1
+kind: Backup
+metadata:
+  name: rancher-daily
+  namespace: cattle-resources-system
+spec:
+  schedule: "0 2 * * *"        # 02:00 UTC daily
+  retentionCount: 7
+  resourceSetName: rancher-resource-set
+---
+# ─── Argo CD Backup (via Velero) ─────────────────────────────────────────────
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: argocd-daily
+  namespace: velero
+spec:
+  schedule: "0 2 * * *"
+  template:
+    includedNamespaces:
+      - argocd
+    includedResources:
+      - applications.argoproj.io
+      - appprojects.argoproj.io
+      - secrets                   # repo credentials and cluster secrets
+      - configmaps
+    labelSelector:
+      matchExpressions:
+        - key: app.kubernetes.io/part-of
+          operator: NotIn
+          values: ["skip-backup"]
+    storageLocation: default
+    ttl: 168h                     # retain 7 days
+---
+# ─── Harbor Backup (via Velero) ──────────────────────────────────────────────
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: harbor-daily
+  namespace: velero
+spec:
+  schedule: "0 3 * * *"          # 03:00 UTC daily (staggered from argocd)
+  template:
+    includedNamespaces:
+      - harbor
+    includedResources:
+      - persistentvolumeclaims
+      - secrets
+      - configmaps
+    storageLocation: default
+    ttl: 168h
+---
+# ─── Cluster state full backup ───────────────────────────────────────────────
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: cluster-weekly
+  namespace: velero
+spec:
+  schedule: "0 1 * * 0"          # 01:00 UTC every Sunday
+  template:
+    excludedNamespaces:
+      - kube-system
+      - kube-public
+      - kube-node-lease
+    storageLocation: default
+    ttl: 720h                     # retain 30 days

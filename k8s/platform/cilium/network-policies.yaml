@@ -1,0 +1,96 @@
+# ─── demo-app namespace: deny all ingress by default, allow only what's needed ──
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: demo-app
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+# Allow ingress-nginx → backend
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-backend
+  namespace: demo-app
+spec:
+  podSelector:
+    matchLabels:
+      app: demo-app
+      component: backend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 8000
+---
+# Allow ingress-nginx → frontend
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-frontend
+  namespace: demo-app
+spec:
+  podSelector:
+    matchLabels:
+      app: demo-app
+      component: frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 80
+---
+# Allow Prometheus scraping of backend metrics
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-scrape
+  namespace: demo-app
+spec:
+  podSelector:
+    matchLabels:
+      app: demo-app
+      component: backend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - port: 8000
+---
+# ─── observability namespace: allow inbound OTLP from demo-app ──────────────
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-otlp-from-demo-app
+  namespace: observability
+spec:
+  podSelector:
+    matchLabels:
+      app: otel-collector
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: demo-app
+      ports:
+        - port: 4317
+        - port: 4318

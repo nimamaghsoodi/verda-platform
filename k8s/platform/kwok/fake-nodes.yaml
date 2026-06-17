@@ -1,0 +1,51 @@
+# KWOK fake node template — applied 100 times via a Job
+# The Job below creates 100 virtual nodes using kubectl
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kwok-create-nodes
+  namespace: kube-system
+spec:
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      serviceAccountName: kwok-controller
+      restartPolicy: OnFailure
+      containers:
+        - name: node-creator
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/sh
+            - -c
+            - |
+              for i in $(seq 1 100); do
+                NODE="kwok-node-$(printf '%03d' $i)"
+                kubectl get node $NODE 2>/dev/null && continue
+                kubectl apply -f - <<EOF
+              apiVersion: v1
+              kind: Node
+              metadata:
+                name: $NODE
+                annotations:
+                  kwok.x-k8s.io/node: fake
+                labels:
+                  beta.kubernetes.io/arch: amd64
+                  beta.kubernetes.io/os: linux
+                  kubernetes.io/arch: amd64
+                  kubernetes.io/hostname: $NODE
+                  kubernetes.io/os: linux
+                  node-role.kubernetes.io/worker: ""
+                  kwok.x-k8s.io/node: fake
+                  type: kwok
+              spec:
+                taints:
+                  - key: kwok.x-k8s.io/node
+                    value: fake
+                    effect: NoSchedule
+              EOF
+              done
+              echo "Created 100 KWOK virtual nodes"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi

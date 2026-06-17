@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: velero
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  project: platform
+  sources:
+    - repoURL: https://vmware-tanzu.github.io/helm-charts
+      chart: velero
+      targetRevision: 9.0.1
+      helm:
+        valuesObject:
+          # Use file-system backup (restic) — swap for S3 in production
+          deployNodeAgent: true
+          configuration:
+            backupStorageLocation:
+              - name: default
+                provider: community.velero.io/directorymapper
+                bucket: velero-backups
+                config:
+                  path: /tmp/velero-backups
+            volumeSnapshotLocation:
+              - name: default
+                provider: community.velero.io/directorymapper
+          # In production: use AWS/GCS/Azure provider pointing at object storage
+          # provider: aws
+          # config:
+          #   region: us-east-1
+          #   s3Url: https://object-storage.verda.com.tr
+          initContainers:
+            - name: velero-plugin-for-csi
+              image: velero/velero-plugin-for-csi:v0.7.1
+              imagePullPolicy: IfNotPresent
+              volumeMounts:
+                - mountPath: /target
+                  name: plugins
+          metrics:
+            serviceMonitor:
+              enabled: true
+              namespace: monitoring
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: velero
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

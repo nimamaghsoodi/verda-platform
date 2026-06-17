@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rancher-backup
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  project: platform
+  sources:
+    - repoURL: https://charts.rancher.io
+      chart: rancher-backup
+      targetRevision: 104.0.0+up5.0.1
+      helm:
+        valuesObject:
+          persistence:
+            enabled: true
+            storageClass: local-path
+            size: 10Gi
+          s3:
+            enabled: false  # Set to true + configure for production S3 backup
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cattle-resources-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

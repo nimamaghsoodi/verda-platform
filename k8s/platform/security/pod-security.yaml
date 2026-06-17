@@ -1,0 +1,37 @@
+# Pod Security Standards — enforce baseline, warn on restricted
+# Applied via namespace labels (built-in Kubernetes admission controller)
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo-app
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/audit: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: harbor
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: baseline
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    # node-exporter needs hostPath/hostPort — warn only, don't enforce
+    pod-security.kubernetes.io/warn: baseline
+    pod-security.kubernetes.io/audit: baseline
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: observability
+  labels:
+    # promtail needs hostPath for log collection — warn only
+    pod-security.kubernetes.io/warn: baseline
+    pod-security.kubernetes.io/audit: baseline

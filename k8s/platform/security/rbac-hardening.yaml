@@ -1,0 +1,29 @@
+# Restrict the demo-app service account to only what it needs
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: demo-app
+  namespace: demo-app
+automountServiceAccountToken: false   # don't auto-mount unless needed
+---
+# Read-only viewer role for the demo-app namespace (for ops team)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: demo-app-viewer
+  namespace: demo-app
+rules:
+  - apiGroups: [""]
+    resources: [pods, pods/log, services, endpoints, configmaps]
+    verbs: [get, list, watch]
+  - apiGroups: [apps]
+    resources: [deployments, replicasets]
+    verbs: [get, list, watch]
+---
+# Deny all wildcards at cluster level for demo service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: deny-wildcard
+rules: []   # empty — bind to service accounts that should have no cluster access

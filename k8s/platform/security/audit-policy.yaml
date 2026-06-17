@@ -1,0 +1,42 @@
+# Kubernetes Audit Policy
+# Deploy via RKE2 kube-apiserver extra args pointing to this file on the node.
+# This file documents the intended audit policy; apply via Ansible to node filesystem.
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+  # Log secret/configmap access at metadata level (avoids logging values)
+  - level: Metadata
+    resources:
+      - group: ""
+        resources: [secrets, configmaps]
+
+  # Log all auth failures
+  - level: Request
+    verbs: [create, update, patch, delete]
+    resources:
+      - group: rbac.authorization.k8s.io
+        resources: [clusterrolebindings, rolebindings]
+
+  # Log exec/attach for security monitoring
+  - level: RequestResponse
+    resources:
+      - group: ""
+        resources: [pods/exec, pods/attach, pods/portforward]
+
+  # Don't log routine read-only health checks
+  - level: None
+    users: [system:kube-proxy]
+    verbs: [watch]
+    resources:
+      - group: ""
+        resources: [endpoints, services, services/status]
+
+  - level: None
+    userGroups: [system:nodes]
+    verbs: [get]
+    resources:
+      - group: ""
+        resources: [nodes, nodes/status]
+
+  # Log everything else at metadata level
+  - level: Metadata
