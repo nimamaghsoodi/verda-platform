@@ -35,3 +35,23 @@ metadata:
     # promtail needs hostPath for log collection — warn only
     pod-security.kubernetes.io/warn: baseline
     pod-security.kubernetes.io/audit: baseline
+---
+# Allow cert-manager ACME HTTP01 solver in demo-app (needed for Let's Encrypt)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-acme-challenge
+  namespace: demo-app
+spec:
+  podSelector:
+    matchLabels:
+      acme.cert-manager.io/http01-solver: "true"
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 8089
