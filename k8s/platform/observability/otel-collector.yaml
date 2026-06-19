@@ -33,7 +33,7 @@ data:
 
     exporters:
       otlp/tempo:
-        endpoint: http://tempo.observability.svc.cluster.local:4317
+        endpoint: tempo.observability.svc.cluster.local:4317
         tls:
           insecure: true
       loki:
@@ -45,14 +45,14 @@ data:
         endpoint: "0.0.0.0:8889"
         namespace: otel
       debug:
-        verbosity: basic
+        verbosity: detailed
 
     service:
       pipelines:
         traces:
           receivers: [otlp]
           processors: [memory_limiter, batch, resource]
-          exporters: [otlp/tempo]
+          exporters: [otlp/tempo, debug]
         metrics:
           receivers: [otlp]
           processors: [memory_limiter, batch, resource]
